@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>HappeeChat3 VC</title>
+<link rel="icon" type="image/svg+xml" href="https://file.garden/ZfeUWQ_uZRgXD5Ma/backdrop1.svg" />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#071017;
+    --panel:#0f1419;
+    --panel-2:#111a22;
+    --accent:#4da3ff;
+    --muted:#8b97a6;
+    --danger:#d85a72;
+    font-family:'Poppins',sans-serif;
+  }
+  html,body{height:100%;margin:0;background:linear-gradient(180deg,#071017 0%,#04060a 100%);color:#e6eef6}
+  .page{max-width:1280px;margin:18px auto;padding:0 16px;box-sizing:border-box}
+  .topbar{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .title{font-size:28px;font-weight:700}
+  .muted{color:var(--muted);font-size:12px}
+  .btn{background:var(--accent);color:#06121a;padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:700}
+  .btn.ghost{background:transparent;color:var(--accent);border:1px solid rgba(255,255,255,0.08)}
+  .btn.danger{background:var(--danger);color:#fff}
+  .layout{display:grid;grid-template-columns:320px 1fr;gap:14px}
+  .panel{background:linear-gradient(180deg,#0d141b,#0a1117);border:1px solid rgba(255,255,255,0.05);border-radius:16px;padding:16px;box-sizing:border-box}
+  .stack{display:flex;flex-direction:column;gap:12px}
+  .input{width:100%;padding:11px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);background:transparent;color:inherit;box-sizing:border-box}
+  .meeting-code{font-size:22px;font-weight:700;letter-spacing:0.12em}
+  .video-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+  .video-card{background:var(--panel-2);border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,0.05);min-height:220px;display:flex;flex-direction:column}
+  .video-wrap{position:relative;flex:1;background:#020406}
+  video{width:100%;height:100%;object-fit:cover;background:#020406}
+  .video-label{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;font-size:14px}
+  .pill{font-size:11px;color:#06121a;background:var(--accent);padding:3px 7px;border-radius:999px;font-weight:700}
+  .controls{display:flex;gap:8px;flex-wrap:wrap}
+  .empty{border:1px dashed rgba(255,255,255,0.08);border-radius:16px;padding:28px;text-align:center;color:var(--muted)}
+  .login-overlay{position:fixed;inset:0;background:rgba(4,7,10,0.88);display:flex;align-items:center;justify-content:center;padding:18px;box-sizing:border-box}
+  .login-card{width:min(500px,92vw);background:linear-gradient(180deg,#07101a,#081218);padding:20px;border-radius:14px;border:1px solid rgba(255,255,255,0.05)}
+  @media(max-width:960px){
+    .page{margin:0;padding:0;max-width:none;min-height:100dvh}
+    .topbar{position:sticky;top:0;z-index:10;padding:14px 14px 10px;background:linear-gradient(180deg,rgba(7,16,23,0.98),rgba(7,16,23,0.9))}
+    .title{font-size:22px}
+    .layout{grid-template-columns:1fr;gap:10px;padding:0 10px 12px}
+    .panel{padding:14px;border-radius:14px}
+    .video-grid{grid-template-columns:1fr}
+    .video-card{min-height:180px}
+    .video-wrap{min-height:180px}
+    .meeting-code{font-size:18px;letter-spacing:0.08em}
+    .controls{gap:6px}
+    .btn{padding:10px 12px}
+  }
+  @media(max-width:640px){
+    .topbar{flex-wrap:wrap;align-items:flex-start}
+    .topbar > div:last-child{margin-left:0;width:100%}
+    .topbar .btn{width:100%;justify-content:center}
+    .stack{gap:10px}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="topbar">
+    <div>
+      <div class="title">HappeeChat3 VC</div>
+      <div class="muted">Private meeting codes with camera and voice</div>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:8px">
+      <a class="btn ghost" href="./index.html" style="text-decoration:none;display:inline-flex;align-items:center">Back to Chat</a>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="panel stack">
+      <div>
+        <div style="font-weight:700">You</div>
+        <div class="muted" id="me-label">Loading...</div>
+      </div>
+
+      <div class="stack">
+        <button id="create-meeting" class="btn">Create Meeting</button>
+        <input id="meeting-code-input" class="input" placeholder="Enter meeting code" />
+        <button id="join-meeting" class="btn ghost">Join Meeting</button>
+      </div>
+
+      <div class="panel" style="padding:14px;background:rgba(255,255,255,0.02)">
+        <div class="muted">Current meeting code</div>
+        <div id="meeting-code-display" class="meeting-code">------</div>
+        <div class="controls" style="margin-top:10px">
+          <button id="copy-code" class="btn ghost">Copy Code</button>
+          <button id="leave-meeting" class="btn ghost">Leave Meeting</button>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button id="toggle-camera" class="btn ghost">Camera On</button>
+        <button id="toggle-mic" class="btn ghost">Mute</button>
+      </div>
+
+      <div class="muted" id="status-msg">Sign in through HappeeChat3 to start a meeting.</div>
+    </div>
+
+    <div class="panel">
+      <div class="video-grid" id="video-grid">
+        <div class="empty">Create or join a meeting to see participants here.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="login-overlay" id="login-overlay" style="display:none">
+  <div class="login-card">
+    <div style="font-size:22px;font-weight:700">Sign in required</div>
+    <p class="muted" style="font-size:14px;line-height:1.6">This voice/video page uses the same HappeeChat3 account system. Sign in on the main chat page first, then come back here.</p>
+    <a class="btn" href="./index.html" style="text-decoration:none;display:inline-flex;align-items:center">Go to HappeeChat3</a>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+import { getDatabase, ref, set, remove, onValue, get, push, onChildAdded, onChildRemoved, update, onDisconnect } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDkpDlINFiUzR0PsFRcxxk-N2fhHLnpACI",
+  authDomain: "hchat2-1d004.firebaseapp.com",
+  databaseURL: "https://hchat2-1d004-default-rtdb.firebaseio.com",
+  projectId: "hchat2-1d004",
+  storageBucket: "hchat2-1d004.firebasestorage.app",
+  messagingSenderId: "807685526215",
+  appId: "1:807685526215:web:6b9042099ff0b464be24e2"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+const el = (s)=> document.querySelector(s);
+const dbRef = (p)=> ref(db, p);
+
+const loginOverlay = el('#login-overlay');
+const meLabel = el('#me-label');
+const createMeetingBtn = el('#create-meeting');
+const joinMeetingBtn = el('#join-meeting');
+const meetingCodeInput = el('#meeting-code-input');
+const meetingCodeDisplay = el('#meeting-code-display');
+const copyCodeBtn = el('#copy-code');
+const leaveMeetingBtn = el('#leave-meeting');
+const toggleCameraBtn = el('#toggle-camera');
+const toggleMicBtn = el('#toggle-mic');
+const statusMsg = el('#status-msg');
+const videoGrid = el('#video-grid');
+
+const rtcConfig = {
+  iceServers: [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" }
+  ]
+};
+
+let state = {
+  me: null,
+  roomCode: '',
+  localStream: null,
+  cameraEnabled: false,
+  micEnabled: true,
+  peers: {},
+  roomWatchUnsub: null,
+  signalWatchUnsubs: [],
+  participantListeners: [],
+  participantCards: {},
+  watchedSignals: {}
+};
+
+function uidPair(a,b){ return [a,b].sort().join('__'); }
+function randomCode(){ return Math.random().toString(36).slice(2,8).toUpperCase(); }
+function escapeHtml(str=''){ return String(str).replace(/[&<>"']/g, (m)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;' }[m])); }
+
+function setStatus(text){ statusMsg.textContent = text; }
+
+function renderVideos(){
+  videoGrid.innerHTML = '';
+  if(!state.roomCode){
+    videoGrid.innerHTML = '<div class="empty">Create or join a meeting to see participants here.</div>';
+    return;
+  }
+
+  const localCard = document.createElement('div');
+  localCard.className = 'video-card';
+  localCard.innerHTML = `
+    <div class="video-wrap"><video id="local-video" autoplay playsinline muted></video></div>
+    <div class="video-label"><span>${escapeHtml(state.me?.username || 'You')}</span><span class="pill">You</span></div>
+  `;
+  videoGrid.appendChild(localCard);
+  const localVideo = localCard.querySelector('#local-video');
+  if(state.localStream) localVideo.srcObject = state.localStream;
+
+  const entries = Object.entries(state.participantCards);
+  if(entries.length === 0){
+    const waiting = document.createElement('div');
+    waiting.className = 'empty';
+    waiting.textContent = 'Share the meeting code so others can join.';
+    videoGrid.appendChild(waiting);
+  }
+  for(const [, card] of entries){
+    videoGrid.appendChild(card);
+  }
+}
+
+function setButtons(){
+  toggleCameraBtn.textContent = state.cameraEnabled ? 'Camera Off' : 'Camera On';
+  toggleMicBtn.textContent = state.micEnabled ? 'Mute' : 'Unmute';
+  meetingCodeDisplay.textContent = state.roomCode || '------';
+}
+
+async function ensureLocalStream(){
+  if(state.localStream) return state.localStream;
+  const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+  state.localStream = stream;
+  state.cameraEnabled = true;
+  state.micEnabled = true;
+  stream.getVideoTracks().forEach((track)=> track.enabled = true);
+  stream.getAudioTracks().forEach((track)=> track.enabled = true);
+  setButtons();
+  renderVideos();
+  return stream;
+}
+
+async function addLocalTracks(pc){
+  const stream = await ensureLocalStream();
+  const senders = pc.getSenders();
+  for(const track of stream.getTracks()){
+    if(!senders.find((sender)=> sender.track && sender.track.kind === track.kind)){
+      pc.addTrack(track, stream);
+    }
+  }
+}
+
+function cleanupPeer(peerId){
+  const entry = state.peers[peerId];
+  if(!entry) return;
+  entry.pc.close();
+  delete state.peers[peerId];
+  delete state.participantCards[peerId];
+  renderVideos();
+}
+
+function makeParticipantCard(peerId, username){
+  const card = document.createElement('div');
+  card.className = 'video-card';
+  card.innerHTML = `
+    <div class="video-wrap"><video autoplay playsinline></video></div>
+    <div class="video-label"><span>${escapeHtml(username || 'Guest')}</span><span class="muted">Remote</span></div>
+  `;
+  state.participantCards[peerId] = card;
+  renderVideos();
+  return card.querySelector('video');
+}
+
+function signalBase(roomCode, a, b){
+  return `vcRooms/${roomCode}/signals/${uidPair(a,b)}`;
+}
+
+async function writeOffer(roomCode, targetUid, offer){
+  await set(dbRef(`${signalBase(roomCode, state.me.id, targetUid)}/offer`), {
+    from: state.me.id,
+    sdp: offer
+  });
+}
+
+async function writeAnswer(roomCode, targetUid, answer){
+  await set(dbRef(`${signalBase(roomCode, state.me.id, targetUid)}/answer`), {
+    from: state.me.id,
+    sdp: answer
+  });
+}
+
+async function sendCandidate(roomCode, targetUid, candidate){
+  await push(dbRef(`${signalBase(roomCode, state.me.id, targetUid)}/candidates/${state.me.id}`), candidate.toJSON());
+}
+
+async function ensurePeerConnection(remoteUid, remoteProfile){
+  if(state.peers[remoteUid]) return state.peers[remoteUid];
+  const pc = new RTCPeerConnection(rtcConfig);
+  const remoteVideo = makeParticipantCard(remoteUid, remoteProfile?.username);
+  const remoteStream = new MediaStream();
+  remoteVideo.srcObject = remoteStream;
+
+  pc.ontrack = (event)=>{
+    for(const track of event.streams[0].getTracks()){
+      remoteStream.addTrack(track);
+    }
+  };
+
+  pc.onicecandidate = (event)=>{
+    if(event.candidate && state.roomCode){
+      sendCandidate(state.roomCode, remoteUid, event.candidate).catch(()=>{});
+    }
+  };
+
+  await addLocalTracks(pc);
+  state.peers[remoteUid] = { pc, remoteStream };
+  return state.peers[remoteUid];
+}
+
+function clearRoomListeners(){
+  for(const stop of state.signalWatchUnsubs) stop();
+  for(const stop of state.participantListeners) stop();
+  state.signalWatchUnsubs = [];
+  state.participantListeners = [];
+  state.watchedSignals = {};
+}
+
+function watchSignalsFor(remoteUid){
+  const base = signalBase(state.roomCode, state.me.id, remoteUid);
+  const offerRef = dbRef(`${base}/offer`);
+  const answerRef = dbRef(`${base}/answer`);
+  const candidateRef = dbRef(`${base}/candidates/${remoteUid}`);
+
+  const offerUnsub = onValue(offerRef, async (snap)=>{
+    const data = snap.val();
+    if(!data || data.from === state.me.id || !state.roomCode) return;
+    const remoteUser = data.from;
+    const usersSnap = await get(dbRef(`users/${remoteUser}`));
+    const profile = usersSnap.val() || { username: 'Guest' };
+    const peer = await ensurePeerConnection(remoteUser, profile);
+    if(peer.pc.signalingState === 'stable'){
+      await peer.pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+      const answer = await peer.pc.createAnswer();
+      await peer.pc.setLocalDescription(answer);
+      await writeAnswer(state.roomCode, remoteUser, answer);
+    }
+  });
+
+  const answerUnsub = onValue(answerRef, async (snap)=>{
+    const data = snap.val();
+    if(!data || data.from === state.me.id) return;
+    const peer = state.peers[data.from];
+    if(peer && peer.pc.signalingState !== 'stable'){
+      await peer.pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+    }
+  });
+
+  const candidateUnsub = onChildAdded(candidateRef, async (snap)=>{
+    const candidate = snap.val();
+    const peer = state.peers[remoteUid];
+    if(peer && candidate){
+      try{
+        await peer.pc.addIceCandidate(new RTCIceCandidate(candidate));
+      }catch(err){
+        console.error(err);
+      }
+    }
+  });
+
+  state.signalWatchUnsubs.push(offerUnsub, answerUnsub, candidateUnsub);
+}
+
+async function maybeStartOffer(remoteUid, remoteProfile){
+  const peer = await ensurePeerConnection(remoteUid, remoteProfile);
+  if(state.me.id < remoteUid && peer.pc.signalingState === 'stable'){
+    const offer = await peer.pc.createOffer();
+    await peer.pc.setLocalDescription(offer);
+    await writeOffer(state.roomCode, remoteUid, offer);
+  }
+}
+
+async function joinMeeting(roomCode){
+  if(!state.me) return;
+  roomCode = (roomCode || '').trim().toUpperCase();
+  if(!roomCode){
+    setStatus('Enter a meeting code first.');
+    return;
+  }
+
+  if(state.roomCode === roomCode) return;
+  await leaveMeeting(false);
+  await ensureLocalStream();
+  state.roomCode = roomCode;
+  setButtons();
+  setStatus(`Joined meeting ${roomCode}.`);
+
+  const participantPath = `vcRooms/${roomCode}/participants/${state.me.id}`;
+  await set(dbRef(participantPath), {
+    username: state.me.username,
+    avatar: state.me.avatar,
+    joinedAt: Date.now()
+  });
+  onDisconnect(dbRef(participantPath)).remove().catch(()=>{});
+
+  const participantsRef = dbRef(`vcRooms/${roomCode}/participants`);
+  const participantsUnsub = onValue(participantsRef, async (snap)=>{
+    const participants = snap.val() || {};
+    const currentIds = Object.keys(participants).filter((id)=> id !== state.me.id);
+
+    for(const uid of Object.keys(state.peers)){
+      if(!currentIds.includes(uid)) cleanupPeer(uid);
+    }
+
+    for(const uid of currentIds){
+      if(!state.watchedSignals[uid]){
+        state.watchedSignals[uid] = true;
+        watchSignalsFor(uid);
+      }
+      if(!state.peers[uid]){
+        await maybeStartOffer(uid, participants[uid]);
+      }
+    }
+    renderVideos();
+  });
+
+  const childRemovedUnsub = onChildRemoved(participantsRef, (snap)=>{
+    const uid = snap.key;
+    if(uid && uid !== state.me.id){
+      cleanupPeer(uid);
+    }
+  });
+
+  state.participantListeners.push(participantsUnsub, childRemovedUnsub);
+  renderVideos();
+}
+
+async function leaveMeeting(clearStatus=true){
+  if(state.roomCode && state.me){
+    await remove(dbRef(`vcRooms/${state.roomCode}/participants/${state.me.id}`)).catch(()=>{});
+  }
+  clearRoomListeners();
+  for(const uid of Object.keys(state.peers)) cleanupPeer(uid);
+  state.peers = {};
+  state.participantCards = {};
+  state.roomCode = '';
+  setButtons();
+  renderVideos();
+  if(clearStatus) setStatus('Left the meeting.');
+}
+
+createMeetingBtn.addEventListener('click', async ()=>{
+  const code = randomCode();
+  await joinMeeting(code);
+});
+
+joinMeetingBtn.addEventListener('click', async ()=>{
+  await joinMeeting(meetingCodeInput.value);
+});
+
+copyCodeBtn.addEventListener('click', async ()=>{
+  if(!state.roomCode) return;
+  try{
+    await navigator.clipboard.writeText(state.roomCode);
+    setStatus('Meeting code copied.');
+  }catch{
+    setStatus('Copy failed. You can still share the code manually.');
+  }
+});
+
+leaveMeetingBtn.addEventListener('click', async ()=>{
+  await leaveMeeting();
+});
+
+toggleCameraBtn.addEventListener('click', async ()=>{
+  try{
+    const stream = await ensureLocalStream();
+    state.cameraEnabled = !state.cameraEnabled;
+    stream.getVideoTracks().forEach((track)=> track.enabled = state.cameraEnabled);
+    setButtons();
+  }catch{
+    setStatus('Camera permission was blocked.');
+  }
+});
+
+toggleMicBtn.addEventListener('click', async ()=>{
+  try{
+    const stream = await ensureLocalStream();
+    state.micEnabled = !state.micEnabled;
+    stream.getAudioTracks().forEach((track)=> track.enabled = state.micEnabled);
+    setButtons();
+  }catch{
+    setStatus('Microphone permission was blocked.');
+  }
+});
+
+meetingCodeInput.addEventListener('keydown', (ev)=>{
+  if(ev.key === 'Enter') joinMeetingBtn.click();
+});
+
+window.addEventListener('beforeunload', ()=>{
+  leaveMeeting(false).catch(()=>{});
+});
+
+onAuthStateChanged(auth, async (user)=>{
+  if(!user){
+    loginOverlay.style.display = 'flex';
+    return;
+  }
+  const snap = await get(dbRef(`users/${user.uid}`));
+  const profile = snap.val();
+  if(!profile || profile.deleted){
+    loginOverlay.style.display = 'flex';
+    return;
+  }
+  loginOverlay.style.display = 'none';
+  state.me = {
+    id: user.uid,
+    username: profile.username || 'User',
+    avatar: profile.avatar || '',
+    email: profile.email || user.email || ''
+  };
+  meLabel.textContent = `${state.me.username} • ${state.me.email}`;
+  setStatus('Create a meeting or join one with a code.');
+  renderVideos();
+  setButtons();
+});
+</script>
+</body>
+</html>
